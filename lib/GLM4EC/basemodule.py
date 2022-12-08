@@ -6,7 +6,7 @@ import copy
 import json
 import re
 from os.path import exists
-from GLM4EC.sdkhelper import SDKHelper
+from .sdkhelper import SDKHelper
 
 logger = logging.getLogger(__name__)
 
