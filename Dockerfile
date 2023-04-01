@@ -1,5 +1,5 @@
 FROM kbase/sdkbase2:python
-MAINTAINER KBase Developer
+MAINTAINER saeedeh.davoudi@ucdenver.edu
 # -----------------------------------------
 # In this section, you can install any system dependencies required
 # to run your App.  For instance, you could place an apt-get update or
@@ -7,9 +7,21 @@ MAINTAINER KBase Developer
 # installation scripts.
 
 # RUN apt-get update
-
+RUN apt-get update
+# Install dependencies
+RUN pip install --upgrade pip && pip install cython && pip install tensorflow && \
+pip install tensorflow_addons && \
+pip install numpy && \
+pip install pandas && \
+pip install h5py && \
+pip install lxml && \
+pip install pyfaidx && \
+pip install IPython
 
 # -----------------------------------------
+
+RUN mkdir deps && cd deps && \
+	git clone --branch main https://github.com/cshenry/KBBaseModules.git
 
 COPY ./ /kb/module
 RUN mkdir -p /kb/module/work

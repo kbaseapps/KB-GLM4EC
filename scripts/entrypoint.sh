@@ -2,6 +2,8 @@
 
 . /kb/deployment/user-env.sh
 
+PATH=/root/miniconda/bin:$PATH
+
 python ./scripts/prepare_deploy_cfg.py ./deploy.cfg ./work/config.properties
 
 if [ -f ./work/token ] ; then
@@ -11,15 +13,15 @@ fi
 if [ $# -eq 0 ] ; then
   sh ./scripts/start_server.sh
 elif [ "${1}" = "test" ] ; then
-  echo "Run Tests"
+  echo "Run Tests" 
   make test
 elif [ "${1}" = "async" ] ; then
   sh ./scripts/run_async.sh
 elif [ "${1}" = "init" ] ; then
   echo "Initialize module"
-  cd data
-  curl -L https://www.dropbox.com/s/y57z4od54f4ewzc/fine_tuned_fliped_common_2048_two.pkl?dl=0 -o fine_tuned_fliped_common_2048_two.pkl
-  curl -L https://www.dropbox.com/s/15mpttx02yp0hq7/pretrained_model2.pkl?dl=0 -o pretrained_model2.pkl 
+  cd /data
+  curl -L https://www.dropbox.com/s/y57z4od54f4ewzc/fine_tuned_fliped_common_2048_two.pkl?dl=0 > fine_tuned_fliped_common_2048_two.pkl
+  curl -L https://www.dropbox.com/s/15mpttx02yp0hq7/pretrained_model2.pkl?dl=0 > pretrained_model2.pkl 
  
   if [ -f fine_tuned_fliped_common_2048_two.pkl ] && [ -f pretrained_model2.pkl ]; then
   	touch __READY__

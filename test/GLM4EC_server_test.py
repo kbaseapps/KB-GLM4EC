@@ -6,10 +6,15 @@ from configparser import ConfigParser
 
 from GLM4EC.GLM4ECImpl import GLM4EC
 from GLM4EC.GLM4ECServer import MethodContext
-from GLM4EC.authclient import KBaseAuth as _KBaseAuth
-
+from installed_clients.authclient import KBaseAuth as _KBaseAuth
 from installed_clients.WorkspaceClient import Workspace
 
+
+PROTEINS = {"A0A820Q4W8":"MNININSSLKKLICNARMGKLRQKEREVAARASAAEIYYVSQRTLRYTIRNPVLFLAQVVVAIVLGLVVGFVFNSLEKSIDPGIQNRLGAIFFMVVSQTLGTITSLEPLIKKRVSYIHKTISAYYRTTTFFIVKVICDVLSMRIVSSILFSLIAYCMTGLEQSAG", "A0A7Z7NP06":"MASQSPAPQRADLLFRHATVVDGTGATRRTADVAVTGDRIIAVGDCAGIAADHTVDCSGRVLAPGFIDAHTHDDGYLLVHRDMTPKVSQGITTVVTGNCGISVAPLVSGAPPQPLDLLGPPALFRFDTFAQWLDALRAAPANVNVVPLLGHSTLRVRAMPELDRPANDAEIAAMRDEVRLAMEAGAFGVSTGTFYPPAAAATEAEIVAVCGPVRSHGGIYSTHLRDETDAIVPSIEEALRIGRALDCPVVFSHHKVAGKRNHGRSVETLGLLAEAARLQPLCLDCHPYPATSTMLRLDRVRQSTRTLITWSTGYPAAGGRDFHELMQELGLDEEALLARLRPAAAIYFIMDERDVARIAQFPLTIFGSDGLPFDPRPHPRQWGTFPRILARMVREDQLMTLEAAIHKMSGLAAQQYGLEDRGRIAPGAFADLVLFDAGRVQDRATFEDPLQLSTGIDGVWVNGAQVWQQSARDGAGDTAGSALPAFSGRVLRRLASDNPSAARR"}
+BAD_PROTEINS = ["MVIVLSRTIRAIAVDVDGTLTDTSRKVSCPAIEALRRQADKGIIVMLVTGNVLPIAYALRHYLGMNGPVIAENGGIVYHDEHVHYLSSKDEPQKAFDQLSKSMKVERIFSDRWRETEIAIRPTYDIELIRKHVRGFDVKVLPSGWAHHLMHKDTDKAKALKWICDNWLRIDMEHVAAIGDSDNDYRMIEIAGFGATPANGSQKCKERADYVASRPYGDGIVEILRVLGLEP", "MNININSSLKKLICNARMGKLRQKEREVAARASAAEIYYVSQRTLRYTIRNPVLFLAQVVVAIVLGLVVGFVFNSLEKSIDPGIQNRLGAIFFMVVSQTLGTITSLEPLIKKRVSYIHKTISAYYRTTTFFIVKVICDVLSMRIVSSILFSLIAYCMTGLEQSAG", "MASQSPAPQRADLLFRHATVVDGTGATRRTADVAVTGDRIIAVGDCAGIAADHTVDCSGRVLAPGFIDAHTHDDGYLLVHRDMTPKVSQGITTVVTGNCGISVAPLVSGAPPQPLDLLGPPALFRFDTFAQWLDALRAAPANVNVVPLLGHSTLRVRAMPELDRPANDAEIAAMRDEVRLAMEAGAFGVSTGTFYPPAAAATEAEIVAVCGPVRSHGGIYSTHLRDETDAIVPSIEEALRIGRALDCPVVFSHHKVAGKRNHGRSVETLGLLAEAARLQPLCLDCHPYPATSTMLRLDRVRQSTRTLITWSTGYPAAGGRDFHELMQELGLDEEALLARLRPAAAIYFIMDERDVARIAQFPLTIFGSDGLPFDPRPHPRQWGTFPRILARMVREDQLMTLEAAIHKMSGLAAQQYGLEDRGRIAPGAFADLVLFDAGRVQDRATFEDPLQLSTGIDGVWVNGAQVWQQSARDGAGDTAGSALPAFSGRVLRRLASDNPSAARR"]
+FASTA_FILE = '../data/sample.fasta'
+DNA_SEQ = {"A0A7J3ALL0":"tgatcggtaattgtttgagtagtctaggcacagtgccgctgttaaacatagacatcttcccgcattcatgttcccgacaaattgagcactggatacatgacagtttatctcacgaggccatactcagtcgggccccgaacgcattgatcgaggttgtcgaaacacctttcgcctgcccagcgtcggttccaagggacgaacgcccataggcgcttcgtcccacaatgcccgcagagcgtaatgtgccttagactcactggtggatataacagaaaacactgggtgcgggcaacgtaggtt"}
+ 
 
 class GLM4ECTest(unittest.TestCase):
 
@@ -51,9 +56,42 @@ class GLM4ECTest(unittest.TestCase):
         if hasattr(cls, 'wsName'):
             cls.wsClient.delete_workspace({'workspace': cls.wsName})
             print('Test workspace was deleted')
-
+            
+            
+    
+    #You can comment the test_GLM4EC function and then uncomment one of the tests in the following function.
+    
+    def test_GLM4EC_bad_params(self):
+        '''
+        # missing params
+        with self.assertRaises(KeyError, msg="No input provided. Please provide either fasta file or proteins hash"):
+            self.serviceImpl.annotate_proteins(self.ctx, {'workspace_name': self.wsName})
+        '''
+        
+        '''
+        # get both proteins and fasta file at the same time
+        with self.assertRaises(AssertionError, msg='Cannot get both proteins and fasta file. Please choose one.'):
+            self.serviceImpl.annotate_proteins(self.ctx, {'workspace_name': self.wsName,
+                                                            'proteins': PROTEINS,
+                                                            'fasta_file': FASTA_FILE, "file_output":True})
+        '''
+        
+        '''
+        # incorrect protein format
+        with self.assertRaises(ValueError, msg='Protein format is incorrect. Please check your input. correct format: {"protein_id": "protein_sequence"}'):
+            self.serviceImpl.annotate_proteins(self.ctx, {'workspace_name': self.wsName,
+                                                    'proteins': BAD_PROTEINS})
+        '''
+        
+        '''
+        # not protein sequence
+        with self.assertRaises(AssertionError, msg="This is a sequence of nucleotides! Please search an aminoacid sequence."):
+            self.serviceImpl.annotate_proteins(self.ctx, {'workspace_name': self.wsName,
+                                                    'proteins': DNA_SEQ})
+        '''   
+    
     # NOTE: According to Python unittest naming rules test method names should start from 'test'. # noqa
-    def test_your_method(self):
+    def test_GLM4EC(self):
         # Prepare test objects in workspace if needed using
         # self.getWsClient().save_objects({'workspace': self.getWsName(),
         #                                  'objects': []})
@@ -63,5 +101,11 @@ class GLM4ECTest(unittest.TestCase):
         #
         # Check returned data with
         # self.assertEqual(ret[...], ...) or other unittest methods
-        ret = self.serviceImpl.run_GLM4EC(self.ctx, {'workspace_name': self.wsName,
-                                                             'parameter_1': 'Hello World!'})
+        params = {'workspace_name': self.wsName,
+                    'proteins': PROTEINS, "file_output":True}
+        
+        ret = self.serviceImpl.annotate_proteins(self.ctx, params)
+        self.assertTrue(len(ret))
+    
+
+

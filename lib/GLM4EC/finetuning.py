@@ -48,6 +48,7 @@ def evaluate_by_len(model, input_encoder, output_spec, seqs, start_seq_len = 512
                 seq_len = seq_len, needs_filtering = False)
         
         assert set(np.unique(sample_weights)) <= {0.0, 1.0}
+        
        
         y_pred = model.predict(X, batch_size = batch_size)
    
@@ -59,7 +60,7 @@ def evaluate_by_len(model, input_encoder, output_spec, seqs, start_seq_len = 512
     
 
 def encode_dataset(seqs, input_encoder, output_spec, seq_len = 512, needs_filtering = True, dataset_name = 'Dataset', verbose = True):
-    
+
     if needs_filtering:
         dataset = pd.DataFrame({'seq': seqs})
         
@@ -88,7 +89,10 @@ def split_dataset_by_len(dataset, seq_col_name = 'seq', start_seq_len = 512, sta
         max_allowed_input_seq_len = seq_len - ADDED_TOKENS_PER_SEQ
         len_mask = (dataset[seq_col_name].str.len() <= max_allowed_input_seq_len)
         len_matching_dataset = dataset[len_mask]
-        yield len_matching_dataset, seq_len, batch_size
+        if len(len_matching_dataset) == 0:
+            pass
+        else:    
+            yield len_matching_dataset, seq_len, batch_size
         dataset = dataset[~len_mask]
         seq_len *= increase_factor
         batch_size = max(batch_size // increase_factor, 1)

@@ -3,6 +3,7 @@
 import logging
 import os
 import sys
+sys.path.append("/deps/KBBaseModules/")
 from GLM4EC.glm4ecmodule import GLM4ECModule
 from installed_clients.WorkspaceClient import Workspace
 #END_HEADER
@@ -25,7 +26,7 @@ class GLM4EC:
     ######################################### noqa
     VERSION = "0.1.0"
     GIT_URL = "https://github.com/kbaseapps/KB-GLM4EC.git"
-    GIT_COMMIT_HASH = "2472d475ab13696092402949052a1b81a6d3c9db"
+    GIT_COMMIT_HASH = "4689812990ef119ab78e32a79fc486d1567f7bea"
 
     #BEGIN_CLASS_HEADER
     #END_CLASS_HEADER
@@ -39,7 +40,7 @@ class GLM4EC:
         self.token = os.environ['KB_AUTH_TOKEN']
         self.wsclient = Workspace(self.config["workspace-url"], token=self.token)
         config["version"] = self.VERSION
-        self.glm4ec = GLM4ECModule("GLM4EC",config['scratch'],"/kb/module",self.config)
+        self.glm4ec = GLM4ECModule("GLM4ECModule",config,"/kb/module",None,self.token)
         logging.basicConfig(format='%(created)s %(levelname)s: %(message)s',
                             level=logging.INFO)
         #END_CONSTRUCTOR
