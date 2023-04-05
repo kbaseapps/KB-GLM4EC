@@ -338,10 +338,14 @@ class Application(object):
         self.serverlog.set_log_level(6)
         self.rpc_service = JSONRPCServiceCustom()
         self.method_authentication = dict()
-        self.rpc_service.add(impl_GLM4EC.annotate_proteins,
-                             name='GLM4EC.annotate_proteins',
+        self.rpc_service.add(impl_GLM4EC.annotate_microbes_with_GLM4EC,
+                             name='GLM4EC.annotate_microbes_with_GLM4EC',
                              types=[dict])
-        self.method_authentication['GLM4EC.annotate_proteins'] = 'required'  # noqa
+        self.method_authentication['GLM4EC.annotate_microbes_with_GLM4EC'] = 'required'  # noqa
+        self.rpc_service.add(impl_GLM4EC.annotate_proteins_with_GLM4EC,
+                             name='GLM4EC.annotate_proteins_with_GLM4EC',
+                             types=[dict])
+        self.method_authentication['GLM4EC.annotate_proteins_with_GLM4EC'] = 'required'  # noqa
         self.rpc_service.add(impl_GLM4EC.status,
                              name='GLM4EC.status',
                              types=[dict])

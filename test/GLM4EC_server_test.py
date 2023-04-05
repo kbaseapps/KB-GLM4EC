@@ -92,19 +92,14 @@ class GLM4ECTest(unittest.TestCase):
     
     # NOTE: According to Python unittest naming rules test method names should start from 'test'. # noqa
     def test_GLM4EC(self):
-        # Prepare test objects in workspace if needed using
-        # self.getWsClient().save_objects({'workspace': self.getWsName(),
-        #                                  'objects': []})
-        #
-        # Run your method by
-        # ret = self.getImpl().your_method(self.getContext(), parameters...)
-        #
-        # Check returned data with
-        # self.assertEqual(ret[...], ...) or other unittest methods
-        params = {'workspace_name': self.wsName,
-                    'proteins': PROTEINS, "file_output":True}
+        params = {'proteins': PROTEINS, "file_output":1}
         
-        ret = self.serviceImpl.annotate_proteins(self.ctx, params)
+        ret = self.serviceImpl.annotate_proteins_with_GLM4EC(self.ctx, params)
+        
+        params = {'workspace': self.wsName,'references': ["68255/Test"]}
+        
+        ret = self.serviceImpl.annotate_microbes_with_GLM4EC(self.ctx, params)
+        
         self.assertTrue(len(ret))
     
 

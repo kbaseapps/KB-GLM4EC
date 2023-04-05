@@ -1,0 +1,47 @@
+#
+# Define basic display information
+#
+name     : Annotate Microbes with GLM4EC
+
+tooltip  : |
+    Annotate the genes in a set of genomes, metagenomes, or other feature-containing object using the GLM4EC algorithm.
+screenshots :
+    []
+
+#
+# Define the set of other narrative methods that should be suggested to the user.
+#
+suggestions :
+    apps:
+        related :
+            []
+        next :
+            [build_fba_model, build_species_tree]
+    methods:
+        related :
+            []
+        next :
+            []
+
+
+#
+# Configure the display and description of the parameters
+#
+parameters :
+    references :
+        ui-name : |
+            Genomes/GenomeSets/Metagenomes
+        short-hint : |
+            One or more Genomes, GenomeSets, or Metagenomes to reannotate.
+    p_threshold :
+        ui-name : |
+            Probability threshold
+        short-hint : |
+            Probability threshold
+    suffix :
+        ui-name : |
+            Suffix to add to output names
+        short-hint : |
+            Suffix to add to output names
+description : |
+    <p></p>

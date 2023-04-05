@@ -1,0 +1,108 @@
+{
+    "ver": "1.0.0",
+    "name": "Annotate Microbes with GLM4EC",
+    "authors": [
+        "chenry",
+        "saeedehd"
+    ],
+    "contact": "https://www.kbase.us/support/",
+    "visble": true,
+    "categories": [
+        "active",
+        "annotation"
+    ],
+    "widgets": {
+        "input": null,
+        "output": "no-display"
+    },
+    "parameters": [
+        {
+            "id": "references",
+            "optional": false,
+            "advanced": false,
+            "allow_multiple": true,
+            "default_values": [
+                ""
+            ],
+            "field_type": "text",
+            "text_options": {
+                "valid_ws_types": [
+                    "KBaseGenomes.Genome",
+                    "KBaseGenomeAnnotations.GenomeAnnotation",
+                    "KBaseSearch.GenomeSet"
+                ]
+            }
+        },
+        {
+            "field_type": "text",
+            "allow_multiple": false,
+            "optional": false,
+            "default_values": [
+                "0.5"
+            ],
+            "id": "p_threshold",
+            "advanced": false,
+            "text_options": {
+                "validate_as": "float"
+            }
+        },
+        {
+            "field_type": "text",
+            "allow_multiple": false,
+            "optional": false,
+            "default_values": [
+                ".glm4ec"
+            ],
+            "id": "suffix",
+            "advanced": false,
+            "text_options" : {}
+        }
+    ],
+    "job_id_output_field": "docker",
+    "behavior": {
+        "service-mapping": {
+            "url": "",
+            "name": "GLM4EC",
+            "method": "annotate_microbes_with_GLM4EC",
+            "input_mapping": [
+                {
+                    "input_parameter": "references",
+                    "target_property": "references",
+                    "target_type_transform": "resolved-ref"
+                },
+                {
+                    "input_parameter": "suffix",
+                    "target_property": "suffix"
+                },
+                {
+                    "input_parameter": "p_threshold",
+                    "target_property": "p_threshold"
+                },
+                {
+                    "narrative_system_variable": "workspace",
+                    "target_property": "workspace"
+                }
+            ],
+            "output_mapping": [
+                {
+                    "service_method_output_path": [
+                        0,
+                        "report_name"
+                    ],
+                    "target_property": "report_name"
+                },
+                {
+                    "service_method_output_path": [
+                        0,
+                        "report_ref"
+                    ],
+                    "target_property": "report_ref"
+                },
+                {
+                    "narrative_system_variable": "workspace",
+                    "target_property": "workspace_name"
+                }
+            ]
+        }
+    }
+}
