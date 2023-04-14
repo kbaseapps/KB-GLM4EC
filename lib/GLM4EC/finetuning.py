@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from .tokenization import ADDED_TOKENS_PER_SEQ
 import tensorflow as tf
+from joblib import Parallel, delayed
 
 class OutputType:
     
@@ -32,7 +33,7 @@ class OutputSpec:
         if unique_labels is not None:
             self.n_unique_labels = len(unique_labels)
 
-
+'''
 def evaluate_by_len(model, input_encoder, output_spec, seqs, start_seq_len = 512, start_batch_size = 32, increase_factor = 2):
     
     #assert model_generator.optimizer_weights is None
@@ -56,6 +57,32 @@ def evaluate_by_len(model, input_encoder, output_spec, seqs, start_seq_len = 512
     
     y_pred = np.concatenate(y_preds, axis = 0)
  
+    return y_pred
+'''
+
+def evaluate_by_len(model, input_encoder, output_spec, seqs, start_seq_len=512, start_batch_size=32, increase_factor=2):
+    
+    dataset = pd.DataFrame({'seq': seqs})
+
+    # Helper function to parallelize the process
+    def process_len_matching_dataset(len_matching_dataset, seq_len, batch_size):
+        X, sample_weights = encode_dataset(len_matching_dataset['seq'], input_encoder, output_spec,
+                                           seq_len=seq_len, needs_filtering=False)
+
+        assert set(np.unique(sample_weights)) <= {0.0, 1.0}
+
+        y_pred = model.predict(X, batch_size=batch_size)
+
+        return y_pred
+
+    # Parallel processing of the dataset
+    parallel_y_preds = Parallel(n_jobs=-1)(delayed(process_len_matching_dataset)(len_matching_dataset, seq_len, batch_size)
+                                           for len_matching_dataset, seq_len, batch_size in split_dataset_by_len(dataset, start_seq_len=start_seq_len, start_batch_size=start_batch_size,
+                                                                                                               increase_factor=increase_factor))
+
+    # Concatenate the predictions
+    y_pred = np.concatenate(parallel_y_preds, axis=0)
+
     return y_pred
     
 
