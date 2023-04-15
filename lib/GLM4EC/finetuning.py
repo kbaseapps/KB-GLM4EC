@@ -76,7 +76,7 @@ def evaluate_by_len(model, input_encoder, output_spec, seqs, start_seq_len=512, 
         return y_pred
 
     # Parallel processing of the dataset
-    parallel_y_preds = Parallel(n_jobs=-1)(delayed(process_len_matching_dataset)(len_matching_dataset, seq_len, batch_size)
+    parallel_y_preds = Parallel(n_jobs=-1, backend='threading')(delayed(process_len_matching_dataset)(len_matching_dataset, seq_len, batch_size)
                                            for len_matching_dataset, seq_len, batch_size in split_dataset_by_len(dataset, start_seq_len=start_seq_len, start_batch_size=start_batch_size,
                                                                                                                increase_factor=increase_factor))
 
