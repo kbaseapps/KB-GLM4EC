@@ -16,7 +16,8 @@ pip install pandas && \
 pip install h5py && \
 pip install lxml && \
 pip install pyfaidx && \
-pip install IPython
+pip install IPython && \
+pip install joblib
 
 # -----------------------------------------
 
