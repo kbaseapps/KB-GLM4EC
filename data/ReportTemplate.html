@@ -1,0 +1,24 @@
+<html>
+<header>
+<title>{{title|safe}}</title>
+<link href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css" rel="stylesheet">
+</header>
+<body>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script>
+	$(document).ready(function() {
+		$('#example').DataTable( {
+			"ajax": {
+				"url": "data.json"
+			},
+			"columns": {{table_columns|safe}}
+		} );
+	} );
+</script>
+<div><table id="example">
+	<thead><tr>{{table_headers|safe}}</tr></thead>
+	<tbody></tbody>
+</table></div>
+</body>
+</html>

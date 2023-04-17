@@ -5,6 +5,7 @@ import sys
 import uuid
 import logging
 import json
+import jinja2
 import pandas as pd
 from Bio import SeqIO
 from kbbasemodules.baseannotationmodule import BaseAnnotationModule
@@ -64,7 +65,7 @@ class GLM4ECModule(BaseAnnotationModule):
         
         if params["create_report"] == 1:
             annotated_object_table = pd.DataFrame.from_records(annotated_object_table)
-            self.build_dataframe_report(annotated_object_table,["Object","Type","Total genes","Annotated genes"])
+            self.build_dataframe_report(annotated_object_table)
             #Printing genome annotations into a JSON file that can be dynamically loaded into the report
             for ref in all_annotations_output:
                 json_str = all_annotations_output[ref]["table"].to_json(orient='records')
@@ -194,4 +195,31 @@ class GLM4ECModule(BaseAnnotationModule):
             gc.collect()  # garbage collector; release the memory for the next protein
         
         output = pd.DataFrame.from_records(output)
-        return output 
+        return output
+    
+    def build_dataframe_report(self,table):        
+        context = {
+            "title":"GLM4EC Results",
+            "table_columns":[{
+                    "data": "Object"
+                },{
+                    "data": "Type"
+                },{
+                    "data": "Total genes"
+                },{
+                    "data": "Annotated genes"
+                }],
+            "table_headers":"<th>Object</th><th>Type</th><th>Total genes</th><th>Annotated genes</th>"
+        }
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(self.module_dir+"/data/"),
+            autoescape=jinja2.select_autoescape(['html', 'xml']))
+        html = env.get_template("ReportTemplate.html").render(context)
+        os.makedirs(self.working_dir+"/html", exist_ok=True)
+        with open(self.working_dir+"/html/index.html", 'w') as f:
+            f.write(html)
+        #Creating data table file
+        json_str = '{"data":'+table.to_json(orient='records')+'}'
+        with open(self.working_dir+"/html/data.json", 'w') as f:
+            f.write(json_str)
+        
