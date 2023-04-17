@@ -127,8 +127,6 @@ class GLM4ECModule(BaseAnnotationModule):
         total_genes = 0
         for item in sequence_list:
             total_genes += 1
-            if total_genes > 100:
-                break
             protein_hash[item[0]] = item[1]
         
         annotations = self.annotate_proteins_utility(protein_hash,threshold)
