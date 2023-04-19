@@ -70,7 +70,7 @@ class GLM4ECModule(BaseAnnotationModule):
             for ref in all_annotations_output:
                 json_str = all_annotations_output[ref]["table"].to_json(orient='records')
                 with open(self.working_dir+"/html/"+self.object_info_hash[ref][1]+".json", 'w') as f:
-                    f.write(json_str)
+                    f.write('{"data":'+json_str+"}")
             output = self.save_report_to_kbase()
         elif params["return_data_directly"] == 1:
             #Stashing all annotations data into an output datastructure
@@ -197,17 +197,7 @@ class GLM4ECModule(BaseAnnotationModule):
     
     def build_dataframe_report(self,table):        
         context = {
-            "title":"GLM4EC Results",
-            "table_columns":[{
-                    "data": "Object"
-                },{
-                    "data": "Type"
-                },{
-                    "data": "Total genes"
-                },{
-                    "data": "Annotated genes"
-                }],
-            "table_headers":"<th>Object</th><th>Type</th><th>Total genes</th><th>Annotated genes</th>"
+            "initial_genome":table.iloc[0]["Object"]
         }
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(self.module_dir+"/data/"),
@@ -217,6 +207,8 @@ class GLM4ECModule(BaseAnnotationModule):
         with open(self.working_dir+"/html/index.html", 'w') as f:
             f.write(html)
         #Creating data table file
+        for index, row in table.iterrows():
+            table.at[index,'Object'] = '<a href="javascript:view_annotations('+"'"+row["Object"]+"'"+')">'+row["Object"]+"</a>"
         json_str = '{"data":'+table.to_json(orient='records')+'}'
         with open(self.working_dir+"/html/data.json", 'w') as f:
             f.write(json_str)
