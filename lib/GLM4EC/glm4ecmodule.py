@@ -5,6 +5,7 @@ import sys
 import uuid
 import logging
 import json
+import jinja2
 import pandas as pd
 from Bio import SeqIO
 from kbbasemodules.baseannotationmodule import BaseAnnotationModule
@@ -64,12 +65,12 @@ class GLM4ECModule(BaseAnnotationModule):
         
         if params["create_report"] == 1:
             annotated_object_table = pd.DataFrame.from_records(annotated_object_table)
-            self.build_dataframe_report(annotated_object_table,["Object","Type","Total genes","Annotated genes"])
+            self.build_dataframe_report(annotated_object_table)
             #Printing genome annotations into a JSON file that can be dynamically loaded into the report
             for ref in all_annotations_output:
                 json_str = all_annotations_output[ref]["table"].to_json(orient='records')
                 with open(self.working_dir+"/html/"+self.object_info_hash[ref][1]+".json", 'w') as f:
-                    f.write(json_str)
+                    f.write('{"data":'+json_str+"}")
             output = self.save_report_to_kbase()
         elif params["return_data_directly"] == 1:
             #Stashing all annotations data into an output datastructure
@@ -126,8 +127,6 @@ class GLM4ECModule(BaseAnnotationModule):
         total_genes = 0
         for item in sequence_list:
             total_genes += 1
-            if total_genes > 100:
-                break
             protein_hash[item[0]] = item[1]
         
         annotations = self.annotate_proteins_utility(protein_hash,threshold)
@@ -194,4 +193,23 @@ class GLM4ECModule(BaseAnnotationModule):
             gc.collect()  # garbage collector; release the memory for the next protein
         
         output = pd.DataFrame.from_records(output)
-        return output 
+        return output
+    
+    def build_dataframe_report(self,table):        
+        context = {
+            "initial_genome":table.iloc[0]["Object"]
+        }
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(self.module_dir+"/data/"),
+            autoescape=jinja2.select_autoescape(['html', 'xml']))
+        html = env.get_template("ReportTemplate.html").render(context)
+        os.makedirs(self.working_dir+"/html", exist_ok=True)
+        with open(self.working_dir+"/html/index.html", 'w') as f:
+            f.write(html)
+        #Creating data table file
+        for index, row in table.iterrows():
+            table.at[index,'Object'] = '<a href="javascript:view_annotations('+"'"+row["Object"]+"'"+')">'+row["Object"]+"</a>"
+        json_str = '{"data":'+table.to_json(orient='records')+'}'
+        with open(self.working_dir+"/html/data.json", 'w') as f:
+            f.write(json_str)
+        
