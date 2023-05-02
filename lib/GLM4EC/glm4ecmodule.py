@@ -167,33 +167,33 @@ class GLM4ECModule(BaseAnnotationModule):
                         model_weights=model_weights
                         )
 
-        for id in proteins:
-            # A check to make sure the sequences are amino acids and not nucleotides
-            if all(i in nucleotides for i in proteins[id]) == False:
-                size = 512
-                # Create the finetune model       
-                if next_power_of_2(len(proteins[id])+ADDED_TOKENS_PER_SEQ) > size:
-                    size = next_power_of_2(len(proteins[id])+ADDED_TOKENS_PER_SEQ)            
-                fine_tuned_model = model_generator.create_model(size)
+        key = list(proteins["proteins"].keys())
+        value = list(proteins["proteins"].values())
 
-                # Predict the EC numbers  
-                y_pred = evaluate_by_len(fine_tuned_model, input_encoder, OUTPUT_SPEC, [proteins[id]],
-                                start_seq_len = 512, start_batch_size = 32)      
+        # raise error if any of the sequences in value list is a nucleotide sequence
+        if any(all(i in nucleotides for i in item) for item in value):
+            raise AssertionError("This is a sequence of nucleotides! Please search an aminoacid sequence.")
+        else:
+            d = {'id': key, 'seq': value}
+            proteins_df = pd.DataFrame(data=d)
+            
+            ids_list, y_pred = evaluate_by_len(model_generator, input_encoder, OUTPUT_SPEC, 
+                            proteins_df, start_seq_len = 512, start_batch_size = 32)      
+            
+            for i in range(y_pred.shape[0]):
                 pred_annotation = []
-                for i in range(y_pred.shape[0]):
-                    for j in range(y_pred.shape[1]):
-                        if y_pred[i, j] >= threshold: #If the probability of an EC number is greater than or equal this threshold return the EC number.
-                            pred_annotation.append((dict_annotation.iloc[j, 0], y_pred[i, j]))
+                for j in range(y_pred.shape[1]):
+                    if y_pred[i, j] >= threshold: #If the probability of an EC number is greater than or equal this threshold return the EC number.
+                        pred_annotation.append((dict_annotation.iloc[j, 0], y_pred[i, j]))
                 ecs = list(set(pred_annotation))
                 for item in ecs:
-                    output.append({"id":id,"function":item[0],"scoretype":"probability","score":item[1]})
-            else:
-                raise AssertionError("This is a sequence of nucleotides! Please search an aminoacid sequence.")
-            
-            gc.collect()  # garbage collector; release the memory for the next protein
-        
-        output = pd.DataFrame.from_records(output)
-        return output
+                    output.append({"id":ids_list[i],"function":item[0],"scoretype":"probability","score":item[1]})
+                
+                gc.collect()  # garbage collector; release the memory for the next protein
+
+            output = pd.DataFrame.from_records(output)
+            return output
+    
     
     def build_dataframe_report(self,table):        
         context = {
