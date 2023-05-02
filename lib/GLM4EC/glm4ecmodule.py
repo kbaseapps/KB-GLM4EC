@@ -167,8 +167,8 @@ class GLM4ECModule(BaseAnnotationModule):
                         model_weights=model_weights
                         )
 
-        key = list(proteins["proteins"].keys())
-        value = list(proteins["proteins"].values())
+        key = list(proteins.keys())
+        value = list(proteins.values())
 
         # raise error if any of the sequences in value list is a nucleotide sequence
         if any(all(i in nucleotides for i in item) for item in value):
