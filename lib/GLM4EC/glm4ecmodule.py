@@ -22,15 +22,20 @@ from .conv_and_global_attention_model import get_model_with_hidden_layers_as_out
 import gc
 import math
 from .tokenization import ADDED_TOKENS_PER_SEQ
+import multiprocessing as mp
 
 warnings.filterwarnings("ignore")
 
 logger = logging.getLogger(__name__)
-
-def next_power_of_2(x):
-    return 1 if x == 0 else 2**math.ceil(math.log2(x))
     
     
+def paral(chunk):
+        # create a DataFrame from the chunk of tuples
+        df = pd.DataFrame(chunk).T
+        df.columns = ['id', 'seq']
+        return df
+        
+        
 class GLM4ECModule(BaseAnnotationModule):
     def __init__(self,name,config,module_dir="/kb/module",working_dir=None,token=None,clients={},callback=None):     
         BaseAnnotationModule.__init__(self,name,config,module_dir,working_dir,token,clients,callback)
@@ -143,6 +148,8 @@ class GLM4ECModule(BaseAnnotationModule):
             self.add_annotations_to_object(reference,suffix,anno_ont_input)
         return {"table":annotations,"total_genes":total_genes,"annotated":anno_count}
     
+                      
+    
     def annotate_proteins_utility(self,proteins,threshold):
         output = []
         nucleotides = 'ACTG' #Nucleotides list; to check if the sequence is DNA or not
@@ -166,7 +173,7 @@ class GLM4ECModule(BaseAnnotationModule):
                         get_model_with_hidden_layers_as_outputs, dropout_rate = 0.5,
                         model_weights=model_weights
                         )
-
+         
         key = list(proteins.keys())
         value = list(proteins.values())
 
@@ -174,9 +181,20 @@ class GLM4ECModule(BaseAnnotationModule):
         if any(all(i in nucleotides for i in item) for item in value):
             raise AssertionError("This is a sequence of nucleotides! Please search an aminoacid sequence.")
         else:
-            d = {'id': key, 'seq': value}
-            proteins_df = pd.DataFrame(data=d)
+            #d = {'id': key, 'seq': value}
+            #proteins_df = pd.DataFrame(data=d)
+            num_rows = len(key) #4298 size of ecoli
+            num_cores = mp.cpu_count()
+            chunk_size = num_rows // num_cores
+            #print(chunk_size) #89
+            chunks = [(key[i:i+chunk_size], value[i:i+chunk_size])
+                      for i in range(0, num_rows, chunk_size)]
+            #print(len(chunks)) #49
+            with mp.Pool(num_cores) as pool:
+                results = pool.map(paral, chunks)
             
+            proteins_df = pd.concat(results, axis=0, ignore_index=True)
+
             ids_list, y_pred = evaluate_by_len(model_generator, input_encoder, OUTPUT_SPEC, 
                             proteins_df, start_seq_len = 512, start_batch_size = 32)      
             
