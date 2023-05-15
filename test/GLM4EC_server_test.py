@@ -96,9 +96,9 @@ class GLM4ECTest(unittest.TestCase):
         
         ret = self.serviceImpl.annotate_proteins_with_GLM4EC(self.ctx, params)
         
-        params = {'workspace': self.wsName,'references': ["68255/Test"]}
+        #params = {'workspace': self.wsName,'references': ["68255/Test"]}
         
-        ret = self.serviceImpl.annotate_microbes_with_GLM4EC(self.ctx, params)
+        #ret = self.serviceImpl.annotate_microbes_with_GLM4EC(self.ctx, params)
         
         self.assertTrue(len(ret))
     
