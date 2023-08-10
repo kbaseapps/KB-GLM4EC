@@ -15,22 +15,13 @@ import warnings
 import pickle
 from .finetuning import OutputType, OutputSpec, evaluate_by_len
 from .existing_model_loading import load_pretrained_model
-from .tokenization import ADDED_TOKENS_PER_SEQ
 from .model_generation import FinetuningModelGenerator
-import numpy as np
 from .conv_and_global_attention_model import get_model_with_hidden_layers_as_outputs
 import gc
-import math
-from .tokenization import ADDED_TOKENS_PER_SEQ
-
 warnings.filterwarnings("ignore")
 
 logger = logging.getLogger(__name__)
-
-def next_power_of_2(x):
-    return 1 if x == 0 else 2**math.ceil(math.log2(x))
-    
-    
+        
 class GLM4ECModule(BaseAnnotationModule):
     def __init__(self,name,config,module_dir="/kb/module",working_dir=None,token=None,clients={},callback=None):     
         BaseAnnotationModule.__init__(self,name,config,module_dir,working_dir,token,clients,callback)
@@ -142,8 +133,13 @@ class GLM4ECModule(BaseAnnotationModule):
         if save_objects == 1:
             self.add_annotations_to_object(reference,suffix,anno_ont_input)
         return {"table":annotations,"total_genes":total_genes,"annotated":anno_count}
+                 
     
     def annotate_proteins_utility(self,proteins,threshold):
+        
+        def is_sequence_constructed_from_nucleotides(sequence, nucleotides):
+            return all(char in nucleotides for char in sequence)
+    
         output = []
         nucleotides = 'ACTG' #Nucleotides list; to check if the sequence is DNA or not
         model_path = self.config["data"]+'/fine_tuned_fliped_common_2048_two.pkl'  #finetuned model path
@@ -166,34 +162,37 @@ class GLM4ECModule(BaseAnnotationModule):
                         get_model_with_hidden_layers_as_outputs, dropout_rate = 0.5,
                         model_weights=model_weights
                         )
-
-        for id in proteins:
-            # A check to make sure the sequences are amino acids and not nucleotides
-            if all(i in nucleotides for i in proteins[id]) == False:
-                size = 512
-                # Create the finetune model       
-                if next_power_of_2(len(proteins[id])+ADDED_TOKENS_PER_SEQ) > size:
-                    size = next_power_of_2(len(proteins[id])+ADDED_TOKENS_PER_SEQ)            
-                fine_tuned_model = model_generator.create_model(size)
-
-                # Predict the EC numbers  
-                y_pred = evaluate_by_len(fine_tuned_model, input_encoder, OUTPUT_SPEC, [proteins[id]],
-                                start_seq_len = 512, start_batch_size = 32)      
-                pred_annotation = []
-                for i in range(y_pred.shape[0]):
-                    for j in range(y_pred.shape[1]):
-                        if y_pred[i, j] >= threshold: #If the probability of an EC number is greater than or equal this threshold return the EC number.
-                            pred_annotation.append((dict_annotation.iloc[j, 0], y_pred[i, j]))
-                ecs = list(set(pred_annotation))
-                for item in ecs:
-                    output.append({"id":id,"function":item[0],"scoretype":"probability","score":item[1]})
-            else:
-                raise AssertionError("This is a sequence of nucleotides! Please search an aminoacid sequence.")
+         
+        #value = list(proteins.values())
+        list_of_invalid_proteins = []
+        
+        # raise error if a sequence in proteins dictionary is a nucleotide sequence
+        for key, value in proteins.items():
+            if is_sequence_constructed_from_nucleotides(value, nucleotides):
+                list_of_invalid_proteins.append(key)
+                logging.warning("The sequence of protein {} is a nucleotide sequence.".format(key))
+        
+        # remove invalid proteins from the dictionary
+        for key in list_of_invalid_proteins:
+            del proteins[key]
+        
+        ids_list, y_pred = evaluate_by_len(model_generator, input_encoder, OUTPUT_SPEC, 
+                        proteins, start_seq_len = 512, start_batch_size = 32)      
+        
+        for i in range(y_pred.shape[0]):
+            pred_annotation = []
+            for j in range(y_pred.shape[1]):
+                if y_pred[i, j] >= threshold: #If the probability of an EC number is greater than or equal this threshold return the EC number.
+                    pred_annotation.append((dict_annotation.iloc[j, 0], y_pred[i, j]))
+            ecs = list(set(pred_annotation))
+            for item in ecs:
+                output.append({"id":ids_list[i],"function":item[0],"scoretype":"probability","score":item[1]})
             
             gc.collect()  # garbage collector; release the memory for the next protein
-        
+
         output = pd.DataFrame.from_records(output)
         return output
+    
     
     def build_dataframe_report(self,table):        
         context = {
