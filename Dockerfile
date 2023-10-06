@@ -21,7 +21,7 @@ pip install joblib
 
 # -----------------------------------------
 
-RUN echo '13' >/dev/null && mkdir deps && cd deps && \
+RUN echo '14' >/dev/null && mkdir deps && cd deps && \
 	git clone --branch main https://github.com/cshenry/KBBaseModules.git
 
 COPY ./ /kb/module
