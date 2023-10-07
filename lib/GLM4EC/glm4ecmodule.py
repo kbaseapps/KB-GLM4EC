@@ -39,7 +39,7 @@ class GLM4ECModule(BaseAnnotationModule):
             "return_data_directly":0,
             "save_annotations_to_file":0
         })
-        references = self.process_object_list(params["references"])
+        references = self.process_genome_list(params["references"])
         annotated_object_table = []
         all_annotations_output = {}
         
