@@ -135,8 +135,7 @@ class GLM4ECModule(BaseAnnotationModule):
         return {"table":annotations,"total_genes":total_genes,"annotated":anno_count}
                  
     
-    def annotate_proteins_utility(self,proteins,threshold):
-        
+    def annotate_proteins_utility(self,proteins,threshold):      
         def is_sequence_constructed_from_nucleotides(sequence, nucleotides):
             return all(char in nucleotides for char in sequence)
     
@@ -163,35 +162,48 @@ class GLM4ECModule(BaseAnnotationModule):
                         model_weights=model_weights
                         )
          
-        #value = list(proteins.values())
-        list_of_invalid_proteins = []
+        value = list(proteins.values())
+        # raise error if any of the sequences in value list is a nucleotide sequence
+        if any(all(i in nucleotides for i in item) for item in value):
+            raise AssertionError("This is a sequence of nucleotides! Please search an aminoacid sequence.")
+        else:
+            ids_list, y_pred = evaluate_by_len(model_generator, input_encoder, OUTPUT_SPEC, 
+                            proteins, start_seq_len = 512, start_batch_size = 32)
+            for i in range(y_pred.shape[0]):
+                pred_annotation = []
+                for j in range(y_pred.shape[1]):
+                    if y_pred[i, j] >= threshold: #If the probability of an EC number is greater than or equal this threshold return the EC number.
+                        pred_annotation.append((dict_annotation.iloc[j, 0], y_pred[i, j]))
+                ecs = list(set(pred_annotation))
+                for item in ecs:
+                    output.append({"id":ids_list[i],"function":item[0],"scoretype":"probability","score":item[1]})
+                gc.collect()  # garbage collector; release the memory for the next protein
+            output = pd.DataFrame.from_records(output)
+            return output
+
+        #list_of_invalid_proteins = []
         
         # raise error if a sequence in proteins dictionary is a nucleotide sequence
-        for key, value in proteins.items():
-            if is_sequence_constructed_from_nucleotides(value, nucleotides):
-                list_of_invalid_proteins.append(key)
-                logging.warning("The sequence of protein {} is a nucleotide sequence.".format(key))
+        # for key, value in proteins.items():
+        #     if is_sequence_constructed_from_nucleotides(value, nucleotides):
+        #         list_of_invalid_proteins.append(key)
+        #         logging.warning("The sequence of protein {} is a nucleotide sequence.".format(key))
         
         # remove invalid proteins from the dictionary
-        for key in list_of_invalid_proteins:
-            del proteins[key]
+        # for key in list_of_invalid_proteins:
+        #     del proteins[key]
         
-        ids_list, y_pred = evaluate_by_len(model_generator, input_encoder, OUTPUT_SPEC, 
-                        proteins, start_seq_len = 512, start_batch_size = 32)      
+        # ids_list, y_pred = evaluate_by_len(model_generator, input_encoder, OUTPUT_SPEC, 
+        #                 proteins, start_seq_len = 512, start_batch_size = 32)      
         
-        for i in range(y_pred.shape[0]):
-            pred_annotation = []
-            for j in range(y_pred.shape[1]):
-                if y_pred[i, j] >= threshold: #If the probability of an EC number is greater than or equal this threshold return the EC number.
-                    pred_annotation.append((dict_annotation.iloc[j, 0], y_pred[i, j]))
-            ecs = list(set(pred_annotation))
-            for item in ecs:
-                output.append({"id":ids_list[i],"function":item[0],"scoretype":"probability","score":item[1]})
-            
-            gc.collect()  # garbage collector; release the memory for the next protein
-
-        output = pd.DataFrame.from_records(output)
-        return output
+        # for i in range(y_pred.shape[0]):
+        #     pred_annotation = []
+        #     for j in range(y_pred.shape[1]):
+        #         if y_pred[i, j] >= threshold: #If the probability of an EC number is greater than or equal this threshold return the EC number.
+        #             pred_annotation.append((dict_annotation.iloc[j, 0], y_pred[i, j]))
+        #     ecs = list(set(pred_annotation))
+        #     for item in ecs:
+        #         output.append({"id":ids_list[i],"function":item[0],"scoretype":"probability","score":item[1]})         
     
     
     def build_dataframe_report(self,table):        
